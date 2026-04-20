@@ -13,6 +13,10 @@ export default function ChatPage({ user, onLogout }) {
   const [pendingStartedAt, setPendingStartedAt] = useState(null);
   const [pendingElapsed, setPendingElapsed] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("ui_theme");
+    return saved === "dark" ? "dark" : "light";
+  });
   const [error, setError] = useState("");
 
   const loadChats = async () => {
@@ -39,6 +43,10 @@ export default function ChatPage({ user, onLogout }) {
       .then(setMessages)
       .catch((err) => setError(err.message));
   }, [activeChatId]);
+
+  useEffect(() => {
+    localStorage.setItem("ui_theme", theme);
+  }, [theme]);
 
   const createChat = async () => {
     try {
@@ -135,46 +143,57 @@ export default function ChatPage({ user, onLogout }) {
   ).padStart(2, "0")}`;
 
   return (
-    <div className="chat-shell">
+    <div className={`chat-shell ${theme === "dark" ? "theme-dark" : ""}`}>
       <header className="app-header">PENSILGPT</header>
       <div className="chat-layout">
-      {sidebarOpen ? <button className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu" /> : null}
-      <ChatSidebar
-        chats={chats}
-        activeChatId={activeChatId}
-        onCreate={createChat}
-        onSelect={setActiveChatId}
-        onDelete={deleteChat}
-        onClose={() => setSidebarOpen(false)}
-        className={sidebarOpen ? "open" : ""}
-      />
-      <main className="chat-main">
-        <header className="topbar">
-          <button className="menu-btn" onClick={() => setSidebarOpen((prev) => !prev)} aria-label="Toggle chats">
-            ☰
-          </button>
-          <div>{user.email}</div>
-          <button onClick={onLogout}>Logout</button>
-        </header>
-        {error ? <p className="error">{error}</p> : null}
-        {activeChatId ? (
-          <>
-            <MessageList messages={messages} />
-            {pendingJob ? (
-              <div className="cat-loader-wrap" role="status" aria-live="polite">
-                <div className="pending-timer">Response time: {formattedPending}</div>
-                <div className="cat-loader" aria-label="Loading assistant response">
-                  🐱
+        {sidebarOpen ? (
+          <button className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
+        ) : null}
+        <ChatSidebar
+          chats={chats}
+          activeChatId={activeChatId}
+          onCreate={createChat}
+          onSelect={setActiveChatId}
+          onDelete={deleteChat}
+          onClose={() => setSidebarOpen(false)}
+          className={sidebarOpen ? "open" : ""}
+        />
+        <main className="chat-main">
+          <header className="topbar">
+            <button className="menu-btn ghost-btn" onClick={() => setSidebarOpen((prev) => !prev)} aria-label="Toggle chats">
+              ☰
+            </button>
+            <div className="topbar-email">{user.email}</div>
+            <div className="topbar-actions">
+              <button
+                className="ghost-btn"
+                onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+                aria-label="Toggle dark mode"
+              >
+                {theme === "dark" ? "☀ Light" : "🌙 Dark"}
+              </button>
+              <button onClick={onLogout}>Logout</button>
+            </div>
+          </header>
+          {error ? <p className="error">{error}</p> : null}
+          {activeChatId ? (
+            <>
+              <MessageList messages={messages} />
+              {pendingJob ? (
+                <div className="cat-loader-wrap" role="status" aria-live="polite">
+                  <div className="pending-timer">Response time: {formattedPending}</div>
+                  <div className="cat-loader" aria-label="Loading assistant response">
+                    🐱
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            <MessageInput disabled={loading} onSend={sendMessage} />
-          </>
-        ) : (
-          <div className="empty">Create or select a chat.</div>
-        )}
-      </main>
-    </div>
+              ) : null}
+              <MessageInput disabled={loading} onSend={sendMessage} />
+            </>
+          ) : (
+            <div className="empty">Create or select a chat.</div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

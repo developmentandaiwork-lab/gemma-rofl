@@ -121,10 +121,11 @@ button:disabled {
 }
 
 .chat-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   color: var(--text);
+  overflow: hidden;
 }
 
 .theme-dark {
@@ -163,16 +164,21 @@ button:disabled {
 .chat-layout {
   display: grid;
   grid-template-columns: 300px 1fr;
-  min-height: calc(100vh - 56px);
+  height: calc(100vh - 56px);
   position: relative;
+  overflow: hidden;
 }
 
 .sidebar {
+  height: 100%;
   border-right: 1px solid var(--border);
   padding: 12px;
   background: var(--surface);
   backdrop-filter: blur(16px);
   z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .primary {
@@ -184,6 +190,9 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 2px;
 }
 
 .chat-item {
@@ -210,9 +219,11 @@ button:disabled {
 }
 
 .chat-main {
+  height: 100%;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
 .topbar {
@@ -253,6 +264,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .security-banner {
@@ -392,6 +404,7 @@ button:disabled {
 @media (max-width: 768px) {
   .chat-layout {
     grid-template-columns: 1fr;
+    height: calc(100vh - 56px);
   }
 
   .menu-btn {

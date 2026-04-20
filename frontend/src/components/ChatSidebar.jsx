@@ -1,6 +1,6 @@
-export default function ChatSidebar({ chats, activeChatId, onCreate, onSelect, onDelete }) {
+export default function ChatSidebar({ chats, activeChatId, onCreate, onSelect, onDelete, className = "", onClose }) {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${className}`.trim()}>
       <button className="primary" onClick={onCreate}>
         New chat
       </button>
@@ -9,7 +9,10 @@ export default function ChatSidebar({ chats, activeChatId, onCreate, onSelect, o
           <div
             key={chat.id}
             className={`chat-item ${chat.id === activeChatId ? "active" : ""}`}
-            onClick={() => onSelect(chat.id)}
+            onClick={() => {
+              onSelect(chat.id);
+              if (onClose) onClose();
+            }}
           >
             <span>{chat.title}</span>
             <button

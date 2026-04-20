@@ -10,6 +10,9 @@ export default function ChatPage({ user, onLogout }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pendingJob, setPendingJob] = useState(null);
+  const [pendingStartedAt, setPendingStartedAt] = useState(null);
+  const [pendingElapsed, setPendingElapsed] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState("");
 
   const loadChats = async () => {
@@ -68,6 +71,7 @@ export default function ChatPage({ user, onLogout }) {
       const result = await api.sendMessage(activeChatId, message);
       setMessages((prev) => [...prev, result.user_message]);
       setPendingJob({ jobId: result.job_id, chatId: activeChatId });
+      setPendingStartedAt(Date.now());
       await loadChats();
     } catch (err) {
       if (err.status === 401) {
@@ -93,15 +97,21 @@ export default function ChatPage({ user, onLogout }) {
             return [...prev, status.assistant_message];
           });
           setPendingJob(null);
+          setPendingStartedAt(null);
+          setPendingElapsed(0);
           await loadChats();
         } else if (status.status === "failed") {
           setError(status.error || "Assistant request failed");
           setPendingJob(null);
+          setPendingStartedAt(null);
+          setPendingElapsed(0);
         }
       } catch (err) {
         if (!cancelled) {
           setError(err.message);
           setPendingJob(null);
+          setPendingStartedAt(null);
+          setPendingElapsed(0);
         }
       }
     }, 1500);
@@ -112,17 +122,37 @@ export default function ChatPage({ user, onLogout }) {
     };
   }, [pendingJob]);
 
+  useEffect(() => {
+    if (!pendingStartedAt) return;
+    const timer = setInterval(() => {
+      setPendingElapsed(Math.floor((Date.now() - pendingStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [pendingStartedAt]);
+
+  const formattedPending = `${String(Math.floor(pendingElapsed / 60)).padStart(2, "0")}:${String(
+    pendingElapsed % 60
+  ).padStart(2, "0")}`;
+
   return (
-    <div className="chat-layout">
+    <div className="chat-shell">
+      <header className="app-header">PENSILGPT</header>
+      <div className="chat-layout">
+      {sidebarOpen ? <button className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu" /> : null}
       <ChatSidebar
         chats={chats}
         activeChatId={activeChatId}
         onCreate={createChat}
         onSelect={setActiveChatId}
         onDelete={deleteChat}
+        onClose={() => setSidebarOpen(false)}
+        className={sidebarOpen ? "open" : ""}
       />
       <main className="chat-main">
         <header className="topbar">
+          <button className="menu-btn" onClick={() => setSidebarOpen((prev) => !prev)} aria-label="Toggle chats">
+            ☰
+          </button>
           <div>{user.email}</div>
           <button onClick={onLogout}>Logout</button>
         </header>
@@ -131,7 +161,8 @@ export default function ChatPage({ user, onLogout }) {
           <>
             <MessageList messages={messages} />
             {pendingJob ? (
-              <div className="cat-loader-wrap">
+              <div className="cat-loader-wrap" role="status" aria-live="polite">
+                <div className="pending-timer">Response time: {formattedPending}</div>
                 <div className="cat-loader" aria-label="Loading assistant response">
                   🐱
                 </div>
@@ -143,6 +174,7 @@ export default function ChatPage({ user, onLogout }) {
           <div className="empty">Create or select a chat.</div>
         )}
       </main>
+    </div>
     </div>
   );
 }

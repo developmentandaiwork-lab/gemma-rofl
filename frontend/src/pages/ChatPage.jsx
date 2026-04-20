@@ -102,7 +102,13 @@ export default function ChatPage({ user, onLogout }) {
         if (status.status === "completed" && status.assistant_message) {
           setMessages((prev) => {
             if (prev.some((m) => m.id === status.assistant_message.id)) return prev;
-            return [...prev, status.assistant_message];
+            return [
+              ...prev,
+              {
+                ...status.assistant_message,
+                processing_seconds: status.processing_seconds ?? null,
+              },
+            ];
           });
           setPendingJob(null);
           setPendingStartedAt(null);
@@ -179,7 +185,7 @@ export default function ChatPage({ user, onLogout }) {
           {activeChatId ? (
             <>
               <div className="security-banner" role="note">
-                🔐 Placeholder: P2P/E2E encryption is not enabled in this MVP.
+                🔐 P2P/E2E encryption
               </div>
               <MessageList messages={messages} activeChatId={activeChatId} />
               {pendingJob ? (

@@ -35,6 +35,9 @@ export default function MessageList({ messages, activeChatId }) {
             {message.role === "assistant" ? (
               <div className="markdown-content">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                {typeof message.processing_seconds === "number" ? (
+                  <div className="message-meta">Processed in {message.processing_seconds}s</div>
+                ) : null}
               </div>
             ) : (
               <p>{message.content}</p>

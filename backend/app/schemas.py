@@ -69,4 +69,5 @@ class ChatJobStatusResponse(BaseModel):
     status: str
     user_message: ChatMessageOut
     assistant_message: ChatMessageOut | None = None
+    processing_seconds: int | None = None
     error: str | None = None

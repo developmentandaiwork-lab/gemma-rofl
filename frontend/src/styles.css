@@ -345,6 +345,12 @@ button:disabled {
   color: var(--muted);
 }
 
+.message-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .message-form {
   display: flex;
   gap: 8px;

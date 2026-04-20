@@ -155,6 +155,10 @@ def get_job_status(
     assistant_message = None
     if job.assistant_message_id:
         assistant_message = db.query(ChatMessage).filter(ChatMessage.id == job.assistant_message_id).first()
+    processing_seconds = None
+    if user_message and assistant_message:
+        delta_seconds = (assistant_message.created_at - user_message.created_at).total_seconds()
+        processing_seconds = max(0, int(round(delta_seconds)))
 
     return ChatJobStatusResponse(
         job_id=job.id,
@@ -162,5 +166,6 @@ def get_job_status(
         status=job.status,
         user_message=ChatMessageOut.model_validate(user_message),
         assistant_message=ChatMessageOut.model_validate(assistant_message) if assistant_message else None,
+        processing_seconds=processing_seconds,
         error=job.error,
     )

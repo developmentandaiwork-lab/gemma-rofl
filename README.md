@@ -9,6 +9,7 @@ Local multi-user chat app for Ollama with a FastAPI backend, React frontend, and
 - Stores chat sessions and message history in Postgres.
 - Proxies chat requests from backend to Ollama's OpenAI-compatible API.
 - Uses async chat jobs queue with Celery + Redis so long LLM calls do not block request handling.
+- Uses pgvector embeddings for semantic context retrieval (recent + relevant history).
 
 ## Architecture (plain text)
 
@@ -35,6 +36,7 @@ Backend -> Redis (enqueue job) + Postgres (status/messages)
 
 ```bash
 ollama pull gemma4:latest
+ollama pull nomic-embed-text
 ```
 
 3. Optional quick check on host:
@@ -127,3 +129,5 @@ docker-compose down
 - Queue unavailable:
   - Ensure `redis` and `worker` services are healthy (`docker compose ps`).
   - Verify `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND` in `.env`.
+- Embedding model issues:
+  - Ensure `OLLAMA_EMBEDDING_MODEL` is available in Ollama (`ollama pull nomic-embed-text`).

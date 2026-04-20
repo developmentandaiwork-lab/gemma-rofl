@@ -7,7 +7,11 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 10080
     ollama_base_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "gemma4:latest"
+    ollama_embedding_model: str = "nomic-embed-text"
     ollama_timeout: int = 300
+    embedding_dimensions: int = 768
+    retrieval_top_k: int = 8
+    retrieval_recent_count: int = 12
     celery_broker_url: str = "redis://redis:6379/0"
     celery_result_backend: str = "redis://redis:6379/1"
     backend_cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"

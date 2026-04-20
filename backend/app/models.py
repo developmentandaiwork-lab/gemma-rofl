@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,6 +42,7 @@ class ChatMessage(Base):
     session_id: Mapped[int] = mapped_column(ForeignKey("chat_sessions.id", ondelete="CASCADE"), index=True, nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     session: Mapped["ChatSession"] = relationship("ChatSession", back_populates="messages")

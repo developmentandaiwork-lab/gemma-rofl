@@ -1,9 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export default function MessageList({ messages, activeChatId }) {
   const listRef = useRef(null);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopy = async (text, key) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 1200);
+    } catch {
+      setCopiedKey(null);
+    }
+  };
 
   useEffect(() => {
     if (listRef.current) {
@@ -31,10 +42,54 @@ export default function MessageList({ messages, activeChatId }) {
       ) : (
         messages.map((message) => (
           <div key={message.id} className={`message ${message.role}`}>
-            <strong>{message.role === "assistant" ? "Assistant" : "You"}</strong>
+            <div className="message-head">
+              <strong>{message.role === "assistant" ? "Assistant" : "You"}</strong>
+              {message.role === "assistant" ? (
+                <button
+                  type="button"
+                  className="copy-btn ghost-btn"
+                  onClick={() => handleCopy(message.content, `message-${message.id}`)}
+                >
+                  {copiedKey === `message-${message.id}` ? "Copied" : "Copy"}
+                </button>
+              ) : null}
+            </div>
             {message.role === "assistant" ? (
               <div className="markdown-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code({ inline, className, children, ...props }) {
+                      const codeContent = String(children).replace(/\n$/, "");
+                      if (inline) {
+                        return (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      }
+                      const codeKey = `code-${message.id}-${codeContent.slice(0, 30)}`;
+                      return (
+                        <div className="code-block-wrap">
+                          <button
+                            type="button"
+                            className="copy-btn code-copy-btn"
+                            onClick={() => handleCopy(codeContent, codeKey)}
+                          >
+                            {copiedKey === codeKey ? "Copied" : "Copy code"}
+                          </button>
+                          <pre>
+                            <code className={className} {...props}>
+                              {codeContent}
+                            </code>
+                          </pre>
+                        </div>
+                      );
+                    },
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
                 {typeof message.processing_seconds === "number" ? (
                   <div className="message-meta">Processed in {message.processing_seconds}s</div>
                 ) : null}

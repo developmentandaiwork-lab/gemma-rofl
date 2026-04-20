@@ -150,6 +150,12 @@ button:disabled {
   background: linear-gradient(180deg, #101722 0%, #0f141b 100%);
 }
 
+.theme-dark .code-copy-btn {
+  background: rgba(31, 41, 55, 0.92);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #e5e7eb;
+}
+
 .app-header {
   height: 56px;
   display: flex;
@@ -299,6 +305,19 @@ button:disabled {
   white-space: pre-wrap;
 }
 
+.message-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.copy-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
 .markdown-content {
   margin-top: 4px;
   overflow-x: auto;
@@ -318,6 +337,7 @@ button:disabled {
   padding: 10px;
   border-radius: 8px;
   overflow-x: auto;
+  margin: 0;
 }
 
 .markdown-content code {
@@ -349,6 +369,21 @@ button:disabled {
   margin-top: 8px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.code-block-wrap {
+  position: relative;
+  margin: 8px 0;
+}
+
+.code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #111827;
 }
 
 .message-form {

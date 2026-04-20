@@ -74,6 +74,10 @@ input:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+input::placeholder {
+  color: var(--muted);
+}
+
 button {
   border: 1px solid transparent;
   border-radius: 10px;
@@ -120,6 +124,7 @@ button:disabled {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  color: var(--text);
 }
 
 .theme-dark {

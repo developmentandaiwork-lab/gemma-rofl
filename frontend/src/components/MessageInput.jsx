@@ -20,7 +20,7 @@ export default function MessageInput({ disabled, onSend }) {
         disabled={disabled}
       />
       <button type="submit" disabled={disabled || !message.trim()}>
-        Send
+        CUM NOW
       </button>
     </form>
   );

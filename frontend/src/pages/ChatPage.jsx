@@ -144,7 +144,7 @@ export default function ChatPage({ user, onLogout }) {
 
   return (
     <div className={`chat-shell ${theme === "dark" ? "theme-dark" : ""}`}>
-      <header className="app-header">PENSILGPT</header>
+      <header className="app-header">PENSILGPT 🦝</header>
       <div className="chat-layout">
         {sidebarOpen ? (
           <button className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />

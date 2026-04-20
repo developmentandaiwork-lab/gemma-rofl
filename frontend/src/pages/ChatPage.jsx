@@ -178,7 +178,10 @@ export default function ChatPage({ user, onLogout }) {
           {error ? <p className="error">{error}</p> : null}
           {activeChatId ? (
             <>
-              <MessageList messages={messages} />
+              <div className="security-banner" role="note">
+                🔐 Placeholder: P2P/E2E encryption is not enabled in this MVP.
+              </div>
+              <MessageList messages={messages} activeChatId={activeChatId} />
               {pendingJob ? (
                 <div className="cat-loader-wrap" role="status" aria-live="polite">
                   <div className="pending-timer">Response time: {formattedPending}</div>

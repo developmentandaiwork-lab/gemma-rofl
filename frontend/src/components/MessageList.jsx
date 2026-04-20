@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export default function MessageList({ messages }) {
+export default function MessageList({ messages, activeChatId }) {
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -10,6 +10,19 @@ export default function MessageList({ messages }) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    if (!listRef.current) return;
+    requestAnimationFrame(() => {
+      if (!listRef.current) return;
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+      setTimeout(() => {
+        if (listRef.current) {
+          listRef.current.scrollTop = listRef.current.scrollHeight;
+        }
+      }, 120);
+    });
+  }, [activeChatId]);
 
   return (
     <div className="messages" ref={listRef}>

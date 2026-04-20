@@ -1,4 +1,4 @@
-# Ollama Network Chat (Gemma 4)
+# Ollama Network Chat (Qwen2.5-14B)
 
 Local multi-user chat app for Ollama with a FastAPI backend, React frontend, and Postgres persistence.
 
@@ -27,7 +27,7 @@ Backend -> Redis (enqueue job) + Postgres (status/messages)
 
 - Docker + Docker Compose
 - Ollama installed and running on macOS host
-- Gemma model pulled in Ollama
+- Qwen model pulled in Ollama
 
 ## Ollama setup on Mac
 
@@ -35,7 +35,7 @@ Backend -> Redis (enqueue job) + Postgres (status/messages)
 2. Pull model:
 
 ```bash
-ollama pull gemma4:latest
+ollama pull qwen2.5:14b
 ollama pull nomic-embed-text
 ```
 
@@ -45,7 +45,7 @@ ollama pull nomic-embed-text
 curl http://localhost:11434/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemma4:latest",
+    "model": "qwen2.5:14b",
     "messages": [{"role": "user", "content": "Hello"}]
   }'
 ```
@@ -116,7 +116,7 @@ docker-compose down
   - Confirm Docker Desktop is running normally on macOS.
   - `docker-compose.yml` includes `extra_hosts` mapping for backend.
 - Model not found:
-  - Run `ollama pull gemma4:latest` on host.
+  - Run `ollama pull qwen2.5:14b` on host.
 - Ollama connection refused:
   - Ensure Ollama process is running and bound correctly.
 - DB migration issues:

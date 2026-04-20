@@ -16,6 +16,10 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/api/chats", tags=["chats"])
+FAILURE_ASSISTANT_MESSAGE = (
+    "Система зараз перевантажена або з'єднання перервалося. "
+    "Будь ласка, спробуйте ще раз трохи пізніше."
+)
 
 
 def _get_owned_chat_or_404(db: Session, user_id: int, chat_id: int) -> ChatSession:
@@ -108,10 +112,17 @@ def send_message(
     try:
         celery_app.send_task("app.tasks.process_chat_job", args=[job.id])
     except OperationalError:
-        job.status = "failed"
+        fallback_message = ChatMessage(
+            session_id=chat.id,
+            role="assistant",
+            content=FAILURE_ASSISTANT_MESSAGE,
+        )
+        db.add(fallback_message)
+        db.flush()
+        job.assistant_message_id = fallback_message.id
+        job.status = "completed"
         job.error = "Queue is unavailable"
         db.commit()
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Queue is unavailable")
 
     return SendMessageResponse(
         user_message=ChatMessageOut.model_validate(user_message),

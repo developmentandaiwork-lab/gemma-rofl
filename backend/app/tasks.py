@@ -6,6 +6,10 @@ from app.models import ChatJob, ChatMessage, ChatSession
 from app.ollama_client import generate_assistant_reply
 
 logger = logging.getLogger(__name__)
+FAILURE_ASSISTANT_MESSAGE = (
+    "Система зараз перевантажена або з'єднання перервалося. "
+    "Будь ласка, спробуйте ще раз трохи пізніше."
+)
 
 
 @celery_app.task(name="app.tasks.process_chat_job")
@@ -50,7 +54,15 @@ def process_chat_job(job_id: int) -> None:
         logger.exception("Failed processing chat job %s: %s", job_id, exc)
         job = db.query(ChatJob).filter(ChatJob.id == job_id).first()
         if job:
-            job.status = "failed"
+            fallback_message = ChatMessage(
+                session_id=job.session_id,
+                role="assistant",
+                content=FAILURE_ASSISTANT_MESSAGE,
+            )
+            db.add(fallback_message)
+            db.flush()
+            job.assistant_message_id = fallback_message.id
+            job.status = "completed"
             job.error = str(exc)[:2000]
             db.commit()
     finally:

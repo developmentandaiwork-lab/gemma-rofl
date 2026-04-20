@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function MessageList({ messages }) {
   const listRef = useRef(null);
@@ -17,7 +19,13 @@ export default function MessageList({ messages }) {
         messages.map((message) => (
           <div key={message.id} className={`message ${message.role}`}>
             <strong>{message.role === "assistant" ? "Assistant" : "You"}</strong>
-            <p>{message.content}</p>
+            {message.role === "assistant" ? (
+              <div className="markdown-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <p>{message.content}</p>
+            )}
           </div>
         ))
       )}

@@ -50,4 +50,5 @@ export const api = {
   listMessages: (chatId) => request(`/api/chats/${chatId}/messages`),
   sendMessage: (chatId, message) =>
     request(`/api/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify({ message }) }),
+  getJobStatus: (chatId, jobId) => request(`/api/chats/${chatId}/jobs/${jobId}`),
 };

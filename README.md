@@ -8,6 +8,7 @@ Local multi-user chat app for Ollama with a FastAPI backend, React frontend, and
 - Keeps each user's chats and messages isolated.
 - Stores chat sessions and message history in Postgres.
 - Proxies chat requests from backend to Ollama's OpenAI-compatible API.
+- Uses async chat jobs queue with Celery + Redis so long LLM calls do not block request handling.
 
 ## Architecture (plain text)
 
@@ -15,8 +16,10 @@ Local multi-user chat app for Ollama with a FastAPI backend, React frontend, and
 Browser -> Frontend container (React + Nginx, :3000)
         -> Nginx proxy /api -> Backend container (FastAPI, :8000)
         -> Postgres container (db:5432)
+        -> Redis container (broker)
 
-Backend -> Host Ollama (http://host.docker.internal:11434)
+Worker (Celery) -> Postgres + Redis + Host Ollama
+Backend -> Redis (enqueue job) + Postgres (status/messages)
 ```
 
 ## Prerequisites
@@ -69,6 +72,24 @@ docker-compose up --build
 - Backend health: [http://localhost:8000/health](http://localhost:8000/health)
 - Frontend-proxied health: [http://localhost:3000/health](http://localhost:3000/health)
 
+## Access From Other Devices (hosts file)
+
+If router DNS is unavailable, use hosts entries on client devices.
+
+Example hosts entry on each client device:
+
+`192.168.1.50 macmini`
+
+Then open:
+
+- [http://macmini:3000](http://macmini:3000)
+- [http://macmini:3000/health](http://macmini:3000/health)
+
+Notes:
+
+- Replace `192.168.1.50` with your Mac mini LAN IP.
+- Keep frontend mapped to port `3000` in `docker-compose.yml`.
+
 ## Default development flow
 
 - Edit backend/frontend code.
@@ -101,3 +122,8 @@ docker-compose down
 - CORS errors:
   - UI now calls backend through frontend nginx proxy (`/api`), so browser CORS is normally not needed for chat UI.
   - If you call backend directly from a browser origin, adjust `BACKEND_CORS_ORIGINS` in `.env`.
+- Long responses timeout:
+  - Increase `OLLAMA_TIMEOUT` in `.env` (default is `300`).
+- Queue unavailable:
+  - Ensure `redis` and `worker` services are healthy (`docker compose ps`).
+  - Verify `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND` in `.env`.

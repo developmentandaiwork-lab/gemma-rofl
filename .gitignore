@@ -1,0 +1,4 @@
+.env
+.DS_Store
+AGENTS.md
+CURSOR_PROMPT_OLLAMA_CHAT.md

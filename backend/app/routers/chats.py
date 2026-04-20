@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from kombu.exceptions import OperationalError
 from sqlalchemy.orm import Session
 
+from app.celery_app import celery_app
 from app.dependencies import get_current_user, get_db
-from app.models import ChatMessage, ChatSession, User
-from app.ollama_client import generate_assistant_reply
+from app.models import ChatJob, ChatMessage, ChatSession, User
 from app.schemas import (
+    ChatJobStatusResponse,
     ChatCreateRequest,
     ChatMessageOut,
     ChatSessionOut,
@@ -98,21 +100,56 @@ def send_message(
     db.add(user_message)
     db.flush()
 
-    history = db.query(ChatMessage).filter(ChatMessage.session_id == chat.id).order_by(ChatMessage.created_at.asc()).all()
-    ollama_messages = [{"role": msg.role, "content": msg.content} for msg in history]
-    assistant_text = generate_assistant_reply(ollama_messages)
-
-    assistant_message = ChatMessage(session_id=chat.id, role="assistant", content=assistant_text)
-    db.add(assistant_message)
-
-    if chat.title == "New chat":
-        chat.title = message_text[:80]
-
+    job = ChatJob(user_id=current_user.id, session_id=chat.id, user_message_id=user_message.id, status="queued")
+    db.add(job)
     db.commit()
     db.refresh(user_message)
-    db.refresh(assistant_message)
+    db.refresh(job)
+    try:
+        celery_app.send_task("app.tasks.process_chat_job", args=[job.id])
+    except OperationalError:
+        job.status = "failed"
+        job.error = "Queue is unavailable"
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Queue is unavailable")
 
     return SendMessageResponse(
         user_message=ChatMessageOut.model_validate(user_message),
-        assistant_message=ChatMessageOut.model_validate(assistant_message),
+        assistant_message=None,
+        job_id=job.id,
+        status=job.status,
+    )
+
+
+@router.get("/{chat_id}/jobs/{job_id}", response_model=ChatJobStatusResponse)
+def get_job_status(
+    chat_id: int,
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ChatJobStatusResponse:
+    chat = _get_owned_chat_or_404(db, current_user.id, chat_id)
+    job = (
+        db.query(ChatJob)
+        .filter(ChatJob.id == job_id, ChatJob.session_id == chat.id, ChatJob.user_id == current_user.id)
+        .first()
+    )
+    if not job:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+
+    user_message = db.query(ChatMessage).filter(ChatMessage.id == job.user_message_id).first()
+    if not user_message:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Job message not found")
+
+    assistant_message = None
+    if job.assistant_message_id:
+        assistant_message = db.query(ChatMessage).filter(ChatMessage.id == job.assistant_message_id).first()
+
+    return ChatJobStatusResponse(
+        job_id=job.id,
+        chat_id=chat.id,
+        status=job.status,
+        user_message=ChatMessageOut.model_validate(user_message),
+        assistant_message=ChatMessageOut.model_validate(assistant_message) if assistant_message else None,
+        error=job.error,
     )

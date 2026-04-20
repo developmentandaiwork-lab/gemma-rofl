@@ -107,11 +107,78 @@ body {
   white-space: pre-wrap;
 }
 
+.markdown-content {
+  margin-top: 4px;
+  overflow-x: auto;
+}
+
+.markdown-content p {
+  margin: 0 0 8px;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content pre {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.markdown-content code {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  background: #e5e7eb;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 6px 0 8px 18px;
+  padding: 0;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid #9ca3af;
+  margin: 6px 0;
+  padding-left: 10px;
+  color: #374151;
+}
+
 .message-form {
   display: flex;
   gap: 8px;
   padding: 12px;
   border-top: 1px solid #ddd;
+}
+
+.cat-loader-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 0;
+}
+
+.cat-loader {
+  font-size: 28px;
+  animation: spinCat 1s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes spinCat {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .message-form input {

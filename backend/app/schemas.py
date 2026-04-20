@@ -58,4 +58,15 @@ class SendMessageRequest(BaseModel):
 
 class SendMessageResponse(BaseModel):
     user_message: ChatMessageOut
-    assistant_message: ChatMessageOut
+    assistant_message: ChatMessageOut | None = None
+    job_id: int
+    status: str
+
+
+class ChatJobStatusResponse(BaseModel):
+    job_id: int
+    chat_id: int
+    status: str
+    user_message: ChatMessageOut
+    assistant_message: ChatMessageOut | None = None
+    error: str | None = None

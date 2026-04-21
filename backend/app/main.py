@@ -1,10 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_limiter import FastAPILimiter
+import redis.asyncio as redis
 
 from app.config import settings
 from app.routers import auth, chats
 
 app = FastAPI(title="Ollama Network Chat API")
+
+@app.on_event("startup")
+async def startup():
+    redis_instance = redis.from_url(settings.celery_broker_url)
+    await FastAPILimiter.init(redis_instance)
 
 app.add_middleware(
     CORSMiddleware,

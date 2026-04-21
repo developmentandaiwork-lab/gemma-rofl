@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from kombu.exceptions import OperationalError
 from sqlalchemy.orm import Session
+from fastapi_limiter import RateLimiter
 
 from app.celery_app import celery_app
 from app.dependencies import get_current_user, get_db
@@ -14,12 +15,24 @@ from app.schemas import (
     SendMessageRequest,
     SendMessageResponse,
 )
+from app.security import decode_access_token
 
 router = APIRouter(prefix="/api/chats", tags=["chats"])
 FAILURE_ASSISTANT_MESSAGE = (
     "Система зараз перевантажена або з'єднання перервалося. "
     "Будь ласка, спробуйте ще раз трохи пізніше."
 )
+
+
+def get_user_id_from_token(request: Request) -> str:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return "anonymous"
+    token = auth_header[7:]
+    payload = decode_access_token(token)
+    if payload and "sub" in payload:
+        return payload["sub"]
+    return "anonymous"
 
 
 def _get_owned_chat_or_404(db: Session, user_id: int, chat_id: int) -> ChatSession:
@@ -89,6 +102,7 @@ def list_messages(
 
 
 @router.post("/{chat_id}/messages", response_model=SendMessageResponse)
+@RateLimiter(times=10, seconds=60, identifier=get_user_id_from_token)
 def send_message(
     chat_id: int,
     payload: SendMessageRequest,

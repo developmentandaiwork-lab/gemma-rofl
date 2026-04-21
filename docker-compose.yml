@@ -10,7 +10,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ollama_user} -d ${POSTGRES_DB:-ollama_chat}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-ollama_user} -d ${POSTGRES_DB:-ollama_chat}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -72,7 +76,7 @@ services:
     build:
       context: ./frontend
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
 

@@ -12,6 +12,8 @@ export default function ChatPage({ user, onLogout }) {
   const [pendingJob, setPendingJob] = useState(null);
   const [pendingStartedAt, setPendingStartedAt] = useState(null);
   const [pendingElapsed, setPendingElapsed] = useState(0);
+  const [sendTimestamps, setSendTimestamps] = useState([]);
+  const [rateLimitedUntil, setRateLimitedUntil] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("ui_theme");
@@ -70,9 +72,38 @@ export default function ChatPage({ user, onLogout }) {
     }
   };
 
+  const rateLimitSecondsLeft = Math.max(
+    0,
+    Math.ceil((rateLimitedUntil - Date.now()) / 1000),
+  );
+  const isRateLimited = rateLimitedUntil > Date.now();
+
   const sendMessage = async (message) => {
     if (!activeChatId) return;
     if (pendingJob) return;
+    if (isRateLimited) {
+      setError(
+        `Rate limit exceeded. Try again in ${rateLimitSecondsLeft} second${rateLimitSecondsLeft === 1 ? "" : "s"}.`,
+      );
+      return;
+    }
+
+    const now = Date.now();
+    const windowStart = now - 60000;
+    const recentSends = sendTimestamps.filter(
+      (timestamp) => timestamp > windowStart,
+    );
+    if (recentSends.length >= 10) {
+      const blockedUntil = recentSends[0] + 60000;
+      setRateLimitedUntil(blockedUntil);
+      setSendTimestamps(recentSends);
+      setError(
+        `Rate limit exceeded. Try again in ${Math.ceil((blockedUntil - now) / 1000)} second${Math.ceil((blockedUntil - now) / 1000) === 1 ? "" : "s"}.`,
+      );
+      return;
+    }
+
+    setSendTimestamps([...recentSends, now]);
     setLoading(true);
     setError("");
     try {
@@ -86,6 +117,12 @@ export default function ChatPage({ user, onLogout }) {
         onLogout();
         return;
       }
+      if (err.status === 429) {
+        const blockedUntil = Date.now() + 60000;
+        setRateLimitedUntil(blockedUntil);
+        setError("Rate limit exceeded. Try again in 60 seconds.");
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -97,11 +134,15 @@ export default function ChatPage({ user, onLogout }) {
     let cancelled = false;
     const timer = setInterval(async () => {
       try {
-        const status = await api.getJobStatus(pendingJob.chatId, pendingJob.jobId);
+        const status = await api.getJobStatus(
+          pendingJob.chatId,
+          pendingJob.jobId,
+        );
         if (cancelled) return;
         if (status.status === "completed" && status.assistant_message) {
           setMessages((prev) => {
-            if (prev.some((m) => m.id === status.assistant_message.id)) return prev;
+            if (prev.some((m) => m.id === status.assistant_message.id))
+              return prev;
             return [
               ...prev,
               {
@@ -145,7 +186,7 @@ export default function ChatPage({ user, onLogout }) {
   }, [pendingStartedAt]);
 
   const formattedPending = `${String(Math.floor(pendingElapsed / 60)).padStart(2, "0")}:${String(
-    pendingElapsed % 60
+    pendingElapsed % 60,
   ).padStart(2, "0")}`;
 
   return (
@@ -153,7 +194,11 @@ export default function ChatPage({ user, onLogout }) {
       <header className="app-header">PENSILGPT 🦝</header>
       <div className="chat-layout">
         {sidebarOpen ? (
-          <button className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-label="Close menu" />
+          <button
+            className="sidebar-backdrop"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+          />
         ) : null}
         <ChatSidebar
           chats={chats}
@@ -166,14 +211,20 @@ export default function ChatPage({ user, onLogout }) {
         />
         <main className="chat-main">
           <header className="topbar">
-            <button className="menu-btn ghost-btn" onClick={() => setSidebarOpen((prev) => !prev)} aria-label="Toggle chats">
+            <button
+              className="menu-btn ghost-btn"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label="Toggle chats"
+            >
               ☰
             </button>
             <div className="topbar-email">{user.email}</div>
             <div className="topbar-actions">
               <button
                 className="ghost-btn"
-                onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
+                onClick={() =>
+                  setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+                }
                 aria-label="Toggle dark mode"
               >
                 {theme === "dark" ? "☀ Light" : "🌙 Dark"}
@@ -189,14 +240,26 @@ export default function ChatPage({ user, onLogout }) {
               </div>
               <MessageList messages={messages} activeChatId={activeChatId} />
               {pendingJob ? (
-                <div className="cat-loader-wrap" role="status" aria-live="polite">
-                  <div className="pending-timer">Response time: {formattedPending}</div>
-                  <div className="cat-loader" aria-label="Loading assistant response">
+                <div
+                  className="cat-loader-wrap"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="pending-timer">
+                    Response time: {formattedPending}
+                  </div>
+                  <div
+                    className="cat-loader"
+                    aria-label="Loading assistant response"
+                  >
                     🐱
                   </div>
                 </div>
               ) : null}
-              <MessageInput disabled={loading} onSend={sendMessage} />
+              <MessageInput
+                disabled={loading || isRateLimited}
+                onSend={sendMessage}
+              />
             </>
           ) : (
             <div className="empty">Create or select a chat.</div>

@@ -8,6 +8,7 @@ from app.routers import auth, chats
 
 app = FastAPI(title="Ollama Network Chat API")
 
+
 @app.on_event("startup")
 async def startup():
     redis_instance = redis.from_url(settings.celery_broker_url)

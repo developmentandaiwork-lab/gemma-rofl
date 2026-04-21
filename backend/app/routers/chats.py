@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from kombu.exceptions import OperationalError
 from sqlalchemy.orm import Session
-from fastapi_limiter import RateLimiter
+from fastapi_limiter.depends import RateLimiter
 
 from app.celery_app import celery_app
 from app.dependencies import get_current_user, get_db
@@ -101,8 +101,11 @@ def list_messages(
     return db.query(ChatMessage).filter(ChatMessage.session_id == chat.id).order_by(ChatMessage.created_at.asc()).all()
 
 
-@router.post("/{chat_id}/messages", response_model=SendMessageResponse)
-@RateLimiter(times=10, seconds=60, identifier=get_user_id_from_token)
+@router.post(
+    "/{chat_id}/messages",
+    response_model=SendMessageResponse,
+    dependencies=[Depends(RateLimiter(times=10, seconds=60, identifier=get_user_id_from_token))],
+)
 def send_message(
     chat_id: int,
     payload: SendMessageRequest,
